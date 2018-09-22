@@ -84,14 +84,17 @@ class ShellSort(Sorter):
     name = "ShellSort"
     def __init__(self, starting_data):
         super().__init__(starting_data)
-        self.last_sorted = 1
-        self.gap_pointer = 701
+        self.gap = 10
+        self.last_sorted = gap
 
     def sort_step(self):
         if self.is_sorted:
             return
-        if self.last_sorted == len(self.data) - 1:
-            self._sorted = True
+        if self.last_sorted >= len(self.data) - 1:
+            if self.gap == 1:
+                self._sorted = True
+            else:
+                self.gap = self.gap // 2
 
         x = self.data[self.last_sorted]
         j = self.last_sorted - 1
