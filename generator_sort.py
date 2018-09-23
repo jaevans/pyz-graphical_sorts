@@ -5,6 +5,7 @@ from collections import namedtuple
 import pygame
 from pygame import Rect
 import ptext
+import math
 
 import pgzrun
 
@@ -21,13 +22,30 @@ class SortObject(object):
         self._data = starting_data[:]
         self._sorted = False
         self._surface = surface
-        self._status = {}
+        self._status = {
+            'compares': 0,
+            'swaps': 0
+        }
         self._hilights = []
         self.sort = self._do_sort()
 
     @staticmethod
     def _swap(x,y):
         return y,x
+    
+    @property
+    def compares(self):
+        return self._status['compares']
+    
+    def _inc_compares(self):
+        self._status['compares'] += 1
+    
+    @property
+    def swaps(self):
+        return self._status['swaps']
+    
+    def _inc_swaps(self):
+        self._status['swaps'] += 1
 
     def get_frame(self):
         bar_width = self._surface.get_width() / len(self._data)
@@ -40,10 +58,11 @@ class SortObject(object):
             pygame.draw.rect(self._surface, pygame.Color(item.color), r, 0)
             pygame.draw.rect(self._surface, pygame.Color('black'), r, 1)
         if self.is_sorted:
-            text_color = 'green'
+            text_color = '#00cc00ff' # Link Green
         else:
             text_color = 'orange'
         ptext.draw(self.name, (10, 10), surf=self._surface, color=text_color, owidth=1, ocolor = 'black')
+        ptext.draw("C: %d, S: %d " % (self.compares, self.swaps), (10, 24), surf=self._surface, color=text_color, owidth=1, ocolor = 'black')
         return self._surface
 
     @property
@@ -53,6 +72,7 @@ class SortObject(object):
     def _swap_indices(self, x, y):
         v1, v2 = self._swap(self._data[x], self._data[y])
         self._data[x], self._data[y] = v1, v2
+        self._inc_swaps()
 
     @property
     def is_sorted(self):
@@ -69,6 +89,7 @@ class BubbleSort(SortObject):
             done_sorting = True
             for sort_pointer in range(len(self._data) - 1):
                 self._hilights = (sort_pointer, sort_pointer + 1)
+                self._inc_compares()
                 (yield)
                 if self._data[sort_pointer].value > self._data[sort_pointer + 1].value:
                     self._swap_indices(sort_pointer, sort_pointer + 1)
@@ -87,6 +108,7 @@ class OptimizedBubbleSort(SortObject):
             done_sorting = True
             for sort_pointer in range(max_sort - 1):
                 self._hilights = (sort_pointer, sort_pointer + 1)
+                self._inc_compares()
                 yield
                 if self._data[sort_pointer].value > self._data[sort_pointer + 1].value:
                     self._swap_indices(sort_pointer, sort_pointer + 1)
@@ -104,18 +126,21 @@ class ShellSort(SortObject):
         gap = len(self._data)
 
         while gap > 1:
-            gap = gap // 2
+            gap = int(math.ceil(gap / 2))
             for i in range(gap, len(self._data), gap):
                 temp = self._data[i]
                 j = i
-                while j >= gap and self._data[j - gap] > temp:
+                while j >= gap and self._data[j - gap].value > temp.value:
                     self._hilights = (j, j - gap)
+                    self._inc_compares()
                     yield
+                    self._inc_swaps()
                     self._data[j] = self._data[j - gap]
                     yield
                     j -= gap
-                yield
+                self._inc_swaps()
                 self._data[j] = temp
+                yield
         self._sorted = True
         # Draw the final sorted frame
         self._hilights = []
@@ -132,14 +157,17 @@ class InsertionSort(SortObject):
             for i in range(gap, len(self._data), gap):
                 temp = self._data[i]
                 j = i
-                while j >= gap and self._data[j - gap] > temp:
+                while j >= gap and self._data[j - gap].value > temp.value:
                     self._hilights = (j, j - gap)
+                    self._inc_compares()
                     yield
                     self._data[j] = self._data[j - gap]
+                    self._inc_swaps()
                     yield
                     j -= gap
-                yield
                 self._data[j] = temp
+                self._inc_swaps()
+                yield
         self._sorted = True
         # Draw the final sorted frame
         self._hilights = []
@@ -163,9 +191,15 @@ class QuickSort(SortObject):
             i = left + 1
             j = right
             while True:
-                while i <= j and self._data[i] <= piv:
+                while i <= j and self._data[i].value <= piv.value:
+                    self._hilights = (i, piv.value)
+                    self._inc_compares()
+                    yield
                     i += 1
-                while j >= i and self._data[j] >= piv:
+                while j >= i and self._data[j].value >= piv.value:
+                    self._hilights = (j, piv.value)
+                    self._inc_compares()
+                    yield
                     j -= 1
                 if j <= i:
                     break
@@ -198,11 +232,13 @@ class SelectionSort(SortObject):
             iMin = j
             for i in range(j + 1, len(self._data)):
                 self._hilights = (i,iMin)
+                self._inc_compares()
                 yield
-                if self._data[i] < self._data[iMin]:
+                if self._data[i].value < self._data[iMin].value:
                     iMin = i
             if iMin != j:
                 self._hilights = (j, iMin)
+                self._inc_compares()
                 yield
                 self._swap_indices(j, iMin)
                 yield
