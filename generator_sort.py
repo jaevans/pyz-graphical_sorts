@@ -8,7 +8,7 @@ import ptext
 
 import pgzrun
 
-DATA_SIZE=50
+DATA_SIZE=100
 
 FPS=24
 
@@ -221,7 +221,7 @@ sorter_types = [
     SelectionSort,
 ]
 
-BOX_WIDTH = 400
+BOX_WIDTH = 600
 BOX_HEIGHT = 100
 Sorter = namedtuple('Sorter', ['name','sorter'])
 
