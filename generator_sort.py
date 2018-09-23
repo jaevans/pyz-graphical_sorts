@@ -147,61 +147,6 @@ class InsertionSort(SortObject):
 class QuickSort(SortObject):
     name = "QuickSort"
 
-    def __partition(self, lo, hi):
-        pivot = self._data[hi]
-        i = lo
-        for j in range(lo, hi):
-            self._hilights = (j, hi)
-            yield
-            if self._data[j] < pivot:
-                self._hilights = (i,j)
-                yield
-                self._swap_indices(i,j)
-                yield
-                i = i + 1
-        self._hilights = (i,hi)
-        yield 
-        self._swap_indices(i, hi)
-        yield
-        return i
-
-    def __quicksort(self, lo, hi):
-        if lo < hi:
-
-            p = self.__partition(lo, hi)
-            self.__quicksort(lo, p - 1)
-            self.__quicksort(p + 1, hi)
-
-    def _do_sort(self):
-        self.__quicksort(0, len(self._data) - 1)
-        self._sorted = True
-        # Draw the final sorted frame
-        self._hilights = []
-
-class QuickSort2(SortObject):
-    name = "QuickSort"
-
-    # def partition(list_, left, right):
-    # """
-    # Partition method
-    # """
-    # #Pivot first element in the array
-    # piv = list_[left]
-    # i = left + 1
-    # j = right
- 
-    # while 1:
-    #     while i <= j  and list_[i] <= piv:
-    #         i +=1
-    #     while j >= i and list_[j] >= piv:
-    #         j -=1
-    #     if j <= i:
-    #         break
-    #     #Exchange items
-    #     list_[i], list_[j] = list_[j], list_[i]
-    # #Exchange pivot to the right position
-    # list_[left], list_[j] = list_[j], list_[left]
-    # return j
     def _do_sort(self):
         """
         Iterative version of quick sort
@@ -272,7 +217,7 @@ sorter_types = [
     OptimizedBubbleSort,
     ShellSort,
     InsertionSort,
-    QuickSort2,
+    QuickSort,
     SelectionSort,
 ]
 
