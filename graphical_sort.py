@@ -28,7 +28,13 @@ class SortObject(Thread):
         self._status = {}
         self._hilights = []
         self.drawing_ready = Lock()
+        self._stop_event = Event()
 
+    def stop(self):
+        self._stop_event.set()
+
+    def _should_stop(self):
+        return self._stop_event.is_set()
 
     @staticmethod
     def _swap(x,y):
@@ -80,6 +86,8 @@ class BubbleSort(SortObject):
         while not self.is_sorted:
             done_sorting = True
             for sort_pointer in range(len(self._data) - 1):
+                if self._should_stop():
+                    return
                 self._hilights = (sort_pointer, sort_pointer + 1)
                 self._draw_frame()
                 if self._data[sort_pointer].value > self._data[sort_pointer + 1].value:
@@ -236,21 +244,22 @@ HEIGHT = ((BOX_HEIGHT + 5) * len(sorter_types)) + 5
 sorters = None
 
 def draw():
-    screen.fill('grey')
-    draw_event.clear()
-    for index, s in enumerate(sorters):
-        s.sorter.drawing_ready.acquire()
-        screen.blit(s.sorter.surface, (5, 5 + (index * (BOX_HEIGHT + 5))))
-        s.sorter.drawing_ready.release()
+    global time_accumlate
+    if time_accumlate >= 1.0 / FPS:
+        time_accumlate = 0
+        screen.fill('grey')
+        for index, s in enumerate(sorters):
+            s.sorter.drawing_ready.acquire()
+            screen.blit(s.sorter.surface, (5, 5 + (index * (BOX_HEIGHT + 5))))
+            s.sorter.drawing_ready.release()
+        draw_event.set()
+        draw_event.clear()
+
 
 time_accumlate = 1.0
 def update(dt):
     global time_accumlate
-    if time_accumlate >= 1.0 / FPS:
-        draw_event.set()
-        time_accumlate = 0
-    else:
-        time_accumlate += dt
+    time_accumlate += dt
 
     global sorters
     if sorters is None:
