@@ -11,7 +11,7 @@ import pgzrun
 
 DATA_SIZE=100
 
-FPS=24
+FPS=25
 
 DataPoint = namedtuple('DataPoint',['value','color'])
 
@@ -20,7 +20,7 @@ class SortObject(object):
     def __init__(self, starting_data, surface):
         super().__init__()
         self._data = starting_data[:]
-        self._sorted = False
+        self.sorted = False
         self._surface = surface
         self._status = {
             'compares': 0,
@@ -57,7 +57,7 @@ class SortObject(object):
             r = Rect((index * bar_width) + 1, self._surface.get_height() - item.value, bar_width - 2, item.value )
             pygame.draw.rect(self._surface, pygame.Color(item.color), r, 0)
             pygame.draw.rect(self._surface, pygame.Color('black'), r, 1)
-        if self.is_sorted:
+        if self.sorted:
             text_color = '#00cc00ff' # Link Green
         else:
             text_color = 'orange'
@@ -75,8 +75,18 @@ class SortObject(object):
         self._inc_swaps()
 
     @property
-    def is_sorted(self):
-        return self._sorted
+    def sorted(self):
+        return self.__dict__['sorted']
+
+    @sorted.setter
+    def sorted(self, value):
+        self.__dict__['sorted'] = value
+        if self.sorted:
+            temp_data = [s.value for s in self._data[:]]
+            temp_data.sort()
+            if temp_data != [s.value for s in self._data]:
+                print("Problem in %s, data is not sorted correctly!" % self.name)
+                print([s.value for s in self._data])
 
     def _do_sort(self):
         raise(NotImplementedError)
@@ -85,7 +95,7 @@ class BubbleSort(SortObject):
     name = "BubbleSort"
 
     def _do_sort(self):
-        while not self.is_sorted:
+        while not self.sorted:
             done_sorting = True
             for sort_pointer in range(len(self._data) - 1):
                 self._hilights = (sort_pointer, sort_pointer + 1)
@@ -95,7 +105,7 @@ class BubbleSort(SortObject):
                     self._swap_indices(sort_pointer, sort_pointer + 1)
                     (yield)
                     done_sorting = False
-            self._sorted = done_sorting
+            self.sorted = done_sorting
         # Draw the final sorted frame
         self._hilights = []
 
@@ -104,7 +114,7 @@ class OptimizedBubbleSort(SortObject):
 
     def _do_sort(self):
         max_sort = len(self._data)
-        while not self.is_sorted:
+        while not self.sorted:
             done_sorting = True
             for sort_pointer in range(max_sort - 1):
                 self._hilights = (sort_pointer, sort_pointer + 1)
@@ -115,7 +125,7 @@ class OptimizedBubbleSort(SortObject):
                     yield
                     done_sorting = False
             max_sort -= 1
-            self._sorted = done_sorting
+            self.sorted = done_sorting
         # Draw the final sorted frame
         self._hilights = []
 
@@ -141,7 +151,7 @@ class ShellSort(SortObject):
                 self._inc_swaps()
                 self._data[j] = temp
                 yield
-        self._sorted = True
+        self.sorted = True
         # Draw the final sorted frame
         self._hilights = []
 
@@ -168,7 +178,7 @@ class InsertionSort(SortObject):
                 self._data[j] = temp
                 self._inc_swaps()
                 yield
-        self._sorted = True
+        self.sorted = True
         # Draw the final sorted frame
         self._hilights = []
 
@@ -220,7 +230,7 @@ class QuickSort(SortObject):
             if piv+1 < right:
                 temp_stack.append((piv+1,right))
         # Draw the final sorted frame
-        self._sorted = True
+        self.sorted = True
         self._hilights = []
      
 
@@ -243,7 +253,7 @@ class SelectionSort(SortObject):
                 self._swap_indices(j, iMin)
                 yield
         # Draw the final sorted frame
-        self._sorted = True
+        self.sorted = True
         self._hilights = []
 
 data = [DataPoint(randint(2,100), "#%06X" % randint(0, (2**24) - 1)) for x in range(DATA_SIZE)]
@@ -285,11 +295,12 @@ def do_draw():
     screen.fill('darkgrey')
     for index, s in enumerate(sorters):
         screen.blit(s.sorter.get_frame(), (5, 5 + (index * (BOX_HEIGHT + 5))))
-        if not s.sorter.is_sorted:
+        if not s.sorter.sorted:
             try:
                 s.sorter.sort.send(None)
             except StopIteration:
                 pass
+        
 
     draw_frame = False
 
